@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Transportation Drag and Drop Game</title>
+
+<style>
+    body{
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom, #b3e5fc, #ffffff);
+        margin:0;
+        padding:0;
+        overflow-x:hidden;
+        text-align:center;
+    }
+
+    h1{
+        background:#ffcc00;
+        margin:0;
+        padding:15px;
+        color:#333;
+    }
+
+    #instruction{
+        font-size:22px;
+        font-weight:bold;
+        color:#444;
+        margin:20px;
+    }
+
+    .game-container{
+        display:flex;
+        justify-content:space-around;
+        align-items:center;
+        flex-wrap:wrap;
+        margin-top:20px;
+        padding:20px;
+    }
+
+    .vehicle-box{
+        width:250px;
+    }
+
+    .vehicle-box img{
+        width:220px;
+        height:180px;
+        object-fit:contain;
+        cursor:grab;
+    }
+
+    .drop-zones{
+        display:flex;
+        gap:20px;
+        flex-wrap:wrap;
+        justify-content:center;
+    }
+
+    .drop-zone{
+        width:220px;
+        height:180px;
+        border:5px dashed #999;
+        border-radius:20px;
+        overflow:hidden;
+        background:white;
+        position:relative;
+    }
+
+    .drop-zone img{
+        width:100%;
+        height:100%;
+        object-fit:cover;
+    }
+
+    .label{
+        font-size:18px;
+        font-weight:bold;
+        margin-top:5px;
+    }
+
+    #feedback{
+        font-size:80px;
+        margin-top:20px;
+        height:100px;
+    }
+
+    #score{
+        font-size:28px;
+        color:#ff5722;
+        margin-top:10px;
+    }
+
+    button{
+        padding:15px 30px;
+        font-size:20px;
+        background:#4caf50;
+        color:white;
+        border:none;
+        border-radius:10px;
+        cursor:pointer;
+        margin-top:20px;
+    }
+
+    button:hover{
+        background:#388e3c;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>Transportation Drag & Drop Game 🚗✈️🚢</h1>
+
+<div id="instruction">
+    Click the transportation image on the left side and drag it to the correct place on the right side.
+</div>
+
+<div id="score">Score: 0 / 10</div>
+
+<div class="game-container">
+
+    <!-- Vehicle -->
+    <div class="vehicle-box">
+        <img id="vehicle" draggable="true">
+        <div class="label" id="vehicleName"></div>
+    </div>
+
+    <!-- Drop Zones -->
+    <div class="drop-zones">
+
+        <div class="drop-zone" data-answer="sky">
+            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600" />
+            <div class="label">Sky</div>
+        </div>
+
+        <div class="drop-zone" data-answer="sea">
+            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600" />
+            <div class="label">Sea</div>
+        </div>
+
+        <div class="drop-zone" data-answer="road">
+            <img src="https://images.unsplash.com/photo-1502877338535-766e1452684a?w=600" />
+            <div class="label">Road</div>
+        </div>
+
+    </div>
+
+</div>
+
+<div id="feedback"></div>
+
+<button onclick="nextQuestion()">Next Question</button>
+
+<!-- Background Music -->
+<audio id="bgMusic" autoplay loop>
+    <source src="assets/correct.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Clap Sound -->
+<audio id="clapSound">
+    <source src="assets/freesound_community-claps-44774.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Wrong Sound -->
+<audio id="wrongSound">
+    <source src="assets/wrong.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+
+const questions = [
+
+{
+    vehicle:"Aeroplane",
+    image:"https://cdn-icons-png.flaticon.com/512/3097/3097183.png",
+    answer:"sky"
+},
+
+{
+    vehicle:"Cruise",
+    image:"https://cdn-icons-png.flaticon.com/512/201/201623.png",
+    answer:"sea"
+},
+
+{
+    vehicle:"Motorcycle",
+    image:"https://cdn-icons-png.flaticon.com/512/2972/2972185.png",
+    answer:"road"
+},
+
+{
+    vehicle:"Truck",
+    image:"https://cdn-icons-png.flaticon.com/512/1995/1995470.png",
+    answer:"road"
+},
+
+{
+    vehicle:"Helicopter",
+    image:"https://cdn-icons-png.flaticon.com/512/284/284364.png",
+    answer:"sky"
+},
+
+{
+    vehicle:"Boat",
+    image:"https://cdn-icons-png.flaticon.com/512/1998/1998610.png",
+    answer:"sea"
+},
+
+{
+    vehicle:"Car",
+    image:"https://cdn-icons-png.flaticon.com/512/744/744465.png",
+    answer:"road"
+},
+
+{
+    vehicle:"Bicycle",
+    image:"https://cdn-icons-png.flaticon.com/512/2972/2972185.png",
+    answer:"road"
+},
+
+{
+    vehicle:"Bus",
+    image:"https://cdn-icons-png.flaticon.com/512/61/61231.png",
+    answer:"road"
+},
+
+{
+    vehicle:"Hot Air Balloon",
+    image:"https://cdn-icons-png.flaticon.com/512/744/744547.png",
+    answer:"sky"
+}
+
+];
+
+let currentQuestion = 0;
+let score = 0;
+
+const vehicle = document.getElementById("vehicle");
+const vehicleName = document.getElementById("vehicleName");
+const feedback = document.getElementById("feedback");
+const scoreBoard = document.getElementById("score");
+
+function loadQuestion(){
+
+    let q = questions[currentQuestion];
+
+    vehicle.src = q.image;
+    vehicleName.innerText = q.vehicle;
+
+    feedback.innerHTML = "";
+
+    speakInstruction(q.vehicle);
+
+}
+
+loadQuestion();
+
+vehicle.addEventListener("dragstart", dragStart);
+
+function dragStart(e){
+    e.dataTransfer.setData("answer", questions[currentQuestion].answer);
+}
+
+const dropZones = document.querySelectorAll(".drop-zone");
+
+dropZones.forEach(zone=>{
+
+    zone.addEventListener("dragover", (e)=>{
+        e.preventDefault();
+    });
+
+    zone.addEventListener("drop", (e)=>{
+
+        e.preventDefault();
+
+        let draggedAnswer = e.dataTransfer.getData("answer");
+        let correctZone = zone.dataset.answer;
+
+        if(draggedAnswer === correctZone){
+
+            feedback.innerHTML = "👏";
+            document.getElementById("clapSound").play();
+
+            score++;
+
+        }else{
+
+            feedback.innerHTML = "❌";
+            document.getElementById("wrongSound").play();
+
+        }
+
+        scoreBoard.innerHTML = `Score: ${score} / 10`;
+
+    });
+
+});
+
+function nextQuestion(){
+
+    currentQuestion++;
+
+    if(currentQuestion >= questions.length){
+
+        document.getElementById("instruction").innerHTML =
+        "🎉 Great Job! Game Completed 🎉";
+
+        vehicle.style.display = "none";
+
+        feedback.innerHTML = "🏆";
+
+        return;
+    }
+
+    loadQuestion();
+
+}
+
+function speakInstruction(vehicleName){
+
+    const text =
+    "Drag the " + vehicleName +
+    " to the correct place.";
+
+    const speech = new SpeechSynthesisUtterance(text);
+
+    speech.rate = 0.9;
+    speech.pitch = 1;
+
+    window.speechSynthesis.speak(speech);
+
+}
+
+</script>
+
+</body>
+</html>
